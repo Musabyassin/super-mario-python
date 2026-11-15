@@ -15,20 +15,39 @@ body { font-size: 2.1vh; }
 .bigBtn.alt { background: var(--good); }
 .bigBtn.ghost { background: transparent; border: 2px solid #fff; }
 .hint { font-size: 2vh; color: #dbe7ff; margin-top: 2.5vh; }
+/* مقاعد اللاعبين الأربعة في الردهة */
+.slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2vh; margin-bottom: 2.5vh; max-width: 90vh; }
+.slot { background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); border-radius: 1.4vh; padding: 1.2vh 1vh; color: #fff; display: flex; flex-direction: column; gap: .5vh; align-items: center; font-size: 2.2vh; }
+.slot.on { background: #fff; color: var(--ink); border-color: var(--accent2); box-shadow: 0 .6vh 1.6vh rgba(0,0,0,.25); }
+.slotDot { width: 2.6vh; height: 2.6vh; border-radius: 50%; box-shadow: inset 0 -.4vh 0 rgba(0,0,0,.25); }
+.slotName { font-weight: 700; font-size: 2.2vh; }
 .qrbox { background: #fff; border-radius: 2vh; padding: 1.6vh; box-shadow: 0 1vh 3vh rgba(0,0,0,.25); text-align: center; color: #111; }
 .qrbox img { display: block; width: 32vh; height: 32vh; }
 .qrbox span { display: block; margin-top: .8vh; font-weight: 700; font-size: 2.4vh; }
 .ctrlState { margin-top: 1vh; font-size: 2.2vh; color: var(--muted); }
 .ctrlState.on { color: var(--good); font-weight: 700; }
 
-#game { height: 100%; display: flex; flex-direction: column; padding: 1.6vh 2vh; gap: 1.2vh; }
+#game { height: 100%; display: flex; flex-direction: column; }
 #game[hidden] { display: none; }
+/* شريط اللاعبين العلوي: بطاقة لكل لاعب (لون + اسم + نقاط + عملات + وفيات) */
+#hudbar { flex: 0 0 auto; min-height: 64px; display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: rgba(0,0,0,.28); }
+#chips { flex: 1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.chip { display: flex; gap: 8px; align-items: center; background: #fff; color: var(--ink); border: 3px solid var(--pc, #e52521); border-radius: 999px; padding: 6px 14px; font-size: 19px; font-weight: 700; box-shadow: 0 3px 0 rgba(0,0,0,.25); white-space: nowrap; }
+.chip .chipDot { width: 14px; height: 14px; border-radius: 50%; background: var(--pc, #e52521); }
+.chip.leader { outline: 3px solid var(--accent2); transform: scale(1.06); }
+#barMid { color: #fff; font-size: 21px; font-weight: 700; white-space: nowrap; }
 #stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
-#cv { height: min(100%, calc((100vw - 4vh) * 0.75)); max-width: 100%; aspect-ratio: 4 / 3; background: #000; border-radius: 1vh; box-shadow: 0 1vh 4vh rgba(0,0,0,.35); image-rendering: pixelated; }
-#overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; background: rgba(0,0,0,.55); border-radius: 1vh; }
+#cv { width: 100%; height: 100%; background: #000; image-rendering: pixelated; display: block; }
+#overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; background: rgba(0,0,0,.45); }
 #overlay[hidden] { display: none; }
-#ovTitle { font-size: 7vh; font-weight: 800; color: #fff; text-shadow: 0 .5vh 0 rgba(0,0,0,.4); }
+#ovTitle { font-size: 7vh; font-weight: 800; color: #fff; text-shadow: 0 .5vh 0 rgba(0,0,0,.4); text-align: center; }
 #ovSub { font-size: 3vh; color: #ffe9a8; }
+#ovStandings { background: rgba(255,255,255,.94); border-radius: 1.6vh; padding: 1.6vh 2.4vh; min-width: 52vh; }
+#ovStandings:empty { display: none; }
+.stTitle { font-size: 2.6vh; font-weight: 800; text-align: center; margin-bottom: .8vh; color: var(--ink); }
+.stRow { display: flex; gap: 1.2vh; align-items: center; font-size: 2.4vh; padding: .5vh 0; color: var(--ink); }
+.stRow .chipDot { width: 2vh; height: 2vh; border-radius: 50%; flex: 0 0 auto; }
+.stRank { font-weight: 800; width: 2.4vh; text-align: center; }
 .ovBtns { display: flex; gap: 1.4vh; flex-wrap: wrap; justify-content: center; }
-#bar { display: flex; gap: 2vh; align-items: center; justify-content: center; font-size: 2.3vh; color: #fff; flex-wrap: wrap; }
+#bar { flex: 0 0 auto; min-height: 56px; display: flex; gap: 2vh; align-items: center; justify-content: center; font-size: 2.3vh; color: #fff; flex-wrap: wrap; background: rgba(0,0,0,.28); padding: 6px 12px; }
 #bar button { font-size: 2.2vh; font-weight: 700; padding: .8vh 2vh; border-radius: 1vh; border: 2px solid #fff; background: rgba(255,255,255,.15); color: #fff; }

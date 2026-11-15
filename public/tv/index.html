@@ -12,8 +12,8 @@
 <div id="lobby">
   <div class="hero">
     <h1>🍄 سوبر ماريو</h1>
-    <p>العب من هاتفك — التلفاز يعرض اللعبة والهاتف هو يد التحكم.<br>
-    افتح صفحة الهاتف وأدخل الكود، أو امسح رمز QR.</p>
+    <p>العبوا من هواتفكم — التلفاز يعرض اللعبة وكل هاتف هو يد تحكم.<br>
+    حتى 4 لاعبين في نفس الغرفة على شاشة واحدة! افتح صفحة الهاتف وأدخل الكود، أو امسح رمز QR.</p>
     <div class="codeRow" id="codeRow"><b>•</b><b>•</b><b>•</b><b>•</b></div>
     <div class="status" id="lobbyStatus">⏳ بانتظار الاتصال بالخادم…</div>
     <div class="levels">
@@ -21,6 +21,7 @@
       <button id="lvl11" class="lvlBtn on">1-1</button>
       <button id="lvl12" class="lvlBtn">1-2</button>
     </div>
+    <div class="slots" id="slots"></div>
     <button id="startBtn" class="bigBtn" disabled>▶ ابدأ اللعب</button>
     <p class="hint">أو العب بلوحة المفاتيح مباشرة: الأسهم للحركة، مسافة/↑ للقفز، Shift للتسريع، P للإيقاف، R لإعادة اللعب.</p>
   </div>
@@ -32,11 +33,16 @@
 </div>
 
 <div id="game" hidden>
+  <div id="hudbar">
+    <div id="chips"></div>
+    <span id="barMid">العالم 1-1 • ⏱ 000</span>
+  </div>
   <div id="stage">
     <canvas id="cv" width="640" height="480"></canvas>
     <div id="overlay" hidden>
       <div id="ovTitle">GAME OVER</div>
       <div id="ovSub"></div>
+      <div id="ovStandings"></div>
       <div class="ovBtns">
         <button id="ovRestart" class="bigBtn">↻ إعادة اللعب</button>
         <button id="ovNext" class="bigBtn alt">المستوى التالي ⏭</button>

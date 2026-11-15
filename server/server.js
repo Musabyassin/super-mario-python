@@ -1,8 +1,9 @@
 'use strict';
 /* سوبر ماريو ويب: خادم غرف بكود، WebSocket، وتقديم صفحات التلفاز والهاتف.
    نفس نموذج سيد العقار: الخادم «مُرحِّل» فقط — فيزياء اللعبة تعمل على
-   صفحة التلفاز، والهاتف يرسل حالة الأزرار المضغوطة فيُمرَّرها الخادم
-   للتلفاز. لا يحتفظ الخادم بأي حالة لعب. */
+   صفحة التلفاز، وكل هاتف لاعب يرسل حالة أزراره فيُمرَّرها الخادم
+   للتلفاز موسومةً برقم اللاعب (حتى 4 لاعبين في الغرفة). لا يحتفظ
+   الخادم بأي حالة لعب. */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -27,6 +28,9 @@ const MIME = {
   '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.ico': 'image/x-icon',
 };
 const MAX_ROOMS = 300;
+const MAX_PLAYERS = 4;
+/* ألوان اللاعبين الأربعة — نفسها في المحرك (public/shared/mario.js) */
+const PLAYER_COLORS = ['#e52521', '#22a447', '#2f6df6', '#f5b800'];
 const rooms = new Map();
 
 function send(ws, obj) { if (ws && ws.readyState === 1) { try { ws.send(JSON.stringify(obj)); } catch (e) { /* ignore */ } } }
@@ -88,23 +92,27 @@ function newCode() {
 function newRoom() {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = newCode(); if (!code) return null;
-  const room = { code, tv: null, controller: null, spectators: new Set(), created: Date.now(), last: Date.now(), emptyTimer: null };
+  const room = { code, tv: null, controllers: [], spectators: new Set(), created: Date.now(), last: Date.now(), emptyTimer: null };
   rooms.set(code, room); return room;
 }
 function roomState(room) {
-  return { t: 'room', code: room.code, tv: !!room.tv, controller: !!room.controller, spectators: room.spectators.size };
+  return {
+    t: 'room', code: room.code, tv: !!room.tv,
+    players: room.controllers.map((c) => ({ slot: c.slot, name: c.name, color: PLAYER_COLORS[c.slot - 1] })),
+    spectators: room.spectators.size,
+  };
 }
 function notifyRoom(room) {
   const m = roomState(room);
   if (room.tv) send(room.tv, m);
-  if (room.controller) send(room.controller, m);
+  room.controllers.forEach((c) => send(c.ws, m));
   room.spectators.forEach((ws) => send(ws, m));
 }
 function maybeDelete(room) {
-  if (room.tv || room.controller || room.spectators.size) return;
+  if (room.tv || room.controllers.length || room.spectators.size) return;
   if (room.emptyTimer) return;
   room.emptyTimer = setTimeout(() => {
-    if (!room.tv && !room.controller && !room.spectators.size) rooms.delete(room.code);
+    if (!room.tv && !room.controllers.length && !room.spectators.size) rooms.delete(room.code);
     room.emptyTimer = null;
   }, 60000);
 }
@@ -140,38 +148,48 @@ wss.on('connection', (ws) => {
         notifyRoom(r);
         return;
       }
-      case 'join': { /* الهاتف: أول هاتف يدخل يصير يد التحكم، والباقي مشاهدون */
+      case 'join': { /* الهاتف: أول 4 هواتف تصير لاعبين (مقاعد 1–4)، والباقي مشاهدون */
         const r = rooms.get(String(msg.code || '').trim());
         if (!r) return send(ws, { t: 'err', m: 'كود الغرفة غير صحيح', fatal: true });
         ws.room = r;
-        if (!r.controller) {
-          r.controller = ws; ws.role = 'controller';
-          send(ws, { t: 'joined', code: r.code, role: 'controller', name: String(msg.name || '').trim().slice(0, 14) || 'لاعب' });
+        const used = new Set(r.controllers.map((c) => c.slot));
+        let slot = 0;
+        for (let s = 1; s <= MAX_PLAYERS; s++) if (!used.has(s)) { slot = s; break; }
+        const name = String(msg.name || '').trim().slice(0, 14) || ('لاعب ' + (slot || ''));
+        if (slot) {
+          r.controllers.push({ ws, slot, name });
+          ws.role = 'controller'; ws.slot = slot;
+          send(ws, { t: 'joined', code: r.code, role: 'controller', slot, color: PLAYER_COLORS[slot - 1], name });
         } else {
           r.spectators.add(ws); ws.role = 'spectator';
-          send(ws, { t: 'joined', code: r.code, role: 'spectator', name: String(msg.name || '').trim().slice(0, 14) || 'مشاهد' });
+          send(ws, { t: 'joined', code: r.code, role: 'spectator', name: name || 'مشاهد' });
         }
         notifyRoom(r);
         return;
       }
-      case 'input': { /* حالة الأزرار من يد التحكم إلى التلفاز */
+      case 'input': { /* حالة الأزرار من يد التحكم إلى التلفاز — موسومة برقم اللاعب */
         if (room && ws.role === 'controller' && room.tv) {
           const inp = msg.input || {};
-          send(room.tv, { t: 'input', input: { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, boost: !!inp.boost } });
+          send(room.tv, { t: 'input', player: ws.slot, input: { left: !!inp.left, right: !!inp.right, jump: !!inp.jump, boost: !!inp.boost } });
         }
         return;
       }
-      case 'control': { /* بدء/إيقاف/إعادة من الهاتف أو التلفاز نفسه */
+      case 'control': { /* بدء/إيقاف/إعادة من أي هاتف لاعب أو التلفاز نفسه */
         if (!room) return;
         const m = { t: 'control', action: String(msg.action || ''), level: String(msg.level || '') };
         if (ws.role === 'controller' && room.tv) send(room.tv, m);
         if (ws.role === 'tv') send(ws, m); /* التلفاز يتحكم بنفسه محلياً عبر نفس الرسالة */
         return;
       }
-      case 'hud': { /* التلفاز يبث حالة اللعبة للهاتف والمشاهدين */
+      case 'hud': { /* التلفاز يبث حالة اللعبة للهواتف والمشاهدين */
         if (!room || ws.role !== 'tv') return;
-        const m = { t: 'hud', phase: String(msg.phase || ''), level: String(msg.level || ''), score: Number(msg.score) || 0, coins: Number(msg.coins) || 0, time: Number(msg.time) || 0 };
-        if (room.controller) send(room.controller, m);
+        const m = {
+          t: 'hud', phase: String(msg.phase || ''), level: String(msg.level || ''), time: Number(msg.time) || 0,
+          players: Array.isArray(msg.players) ? msg.players : [],
+          winner: msg.winner || null, standings: msg.standings || null,
+          score: Number(msg.score) || 0, coins: Number(msg.coins) || 0,
+        };
+        room.controllers.forEach((c) => send(c.ws, m));
         room.spectators.forEach((s) => send(s, m));
         return;
       }
@@ -181,7 +199,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     const room = ws.room; if (!room) return;
     if (ws.role === 'tv' && room.tv === ws) room.tv = null;
-    if (ws.role === 'controller' && room.controller === ws) room.controller = null;
+    if (ws.role === 'controller') room.controllers = room.controllers.filter((c) => c.ws !== ws);
     if (ws.role === 'spectator') room.spectators.delete(ws);
     ws.room = null;
     notifyRoom(room);

@@ -5,9 +5,25 @@ const $ = (id) => document.getElementById(id);
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 
 let ws = null, code = '', role = '';
+let mySlot = 0, myColor = '';
 const input = { left: false, right: false, jump: false, boost: false };
 let lastSent = '';
-window.__phone = { input, get role() { return role; }, get code() { return code; } };
+window.__phone = { input, get role() { return role; }, get code() { return code; }, get slot() { return mySlot; } };
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+function renderStandings(list) {
+  const el = $('standings');
+  if (!list || !list.length) { el.hidden = true; return; }
+  const rows = [...list].sort((a, b) => ((b.progress || 0) - (a.progress || 0)) || (b.score - a.score));
+  el.hidden = false;
+  el.innerHTML = '<div class="stTitle">🏁 الترتيب</div>' + rows.map((p, i) =>
+    '<div class="stRow"><span class="stRank">' + (i + 1) + '</span>'
+    + '<span class="chipDot" style="background:' + (p.color || '#888') + '"></span>'
+    + '<b>' + escapeHtml(p.name || ('اللاعب ' + p.slot)) + '</b>'
+    + '<span>⭐ ' + p.score + '</span><span>🪙 ' + p.coins + '</span><span>💀 ' + (p.deaths || 0) + '</span></div>').join('');
+}
 
 const params = new URLSearchParams(location.search);
 if (params.get('c')) $('codeInput').value = params.get('c').slice(0, 4);
@@ -61,6 +77,14 @@ function join() {
       $('pad').hidden = false;
       $('roomLbl').textContent = 'غرفة ' + msg.code;
       $('connLbl').textContent = '✅ متصل';
+      if (role === 'controller') {
+        mySlot = msg.slot; myColor = msg.color || '#e52521';
+        const b = $('slotBadge');
+        b.hidden = false;
+        b.textContent = '🎮 أنت اللاعب ' + msg.slot + (msg.name ? ' — ' + msg.name : '');
+        b.style.background = myColor;
+        b.style.borderColor = myColor;
+      }
       if (role === 'spectator') {
         $('specNote').hidden = false;
         $('controls').style.opacity = '.35';
@@ -68,9 +92,22 @@ function join() {
         $('phaseLbl').textContent = 'أنت تشاهد اللعبة فقط';
       }
     } else if (msg.t === 'hud') {
-      $('hudLbl').textContent = '⭐ ' + msg.score + ' • 🪙 ' + msg.coins + ' • ⏱ ' + msg.time;
+      const ps = msg.players || [];
+      const me = ps.find((p) => p.slot === mySlot);
+      if (role === 'spectator') {
+        $('hudLbl').textContent = '👀 تشاهد • ' + ps.length + (ps.length === 1 ? ' لاعب' : ' لاعبين');
+        renderStandings(msg.standings || ps);
+      } else if (me) {
+        $('hudLbl').textContent = '⭐ ' + me.score + ' • 🪙 ' + me.coins + ' • 💀 ' + me.deaths;
+      }
       const phases = { lobby: 'الردهة', playing: 'تلعب الآن — المستوى ' + msg.level, paused: 'متوقفة مؤقتاً', dying: '…', gameover: 'انتهت اللعبة — اضغط إعادة', win: '🎉 أنهيت المستوى ' + msg.level + '!' };
       if (role !== 'spectator') $('phaseLbl').textContent = phases[msg.phase] || msg.phase;
+      if (msg.phase === 'win' && msg.winner) {
+        $('phaseLbl').textContent = '🏆 الفائز: ' + msg.winner.name + '!';
+        renderStandings(msg.standings || ps);
+      } else if (role !== 'spectator') {
+        $('standings').hidden = true;
+      }
     } else if (msg.t === 'err') {
       $('joinErr').textContent = msg.m || 'خطأ';
       $('joinBtn').disabled = false;

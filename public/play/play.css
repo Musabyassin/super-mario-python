@@ -14,6 +14,14 @@ body { background: #20242e; color: #fff; touch-action: none; overscroll-behavior
 #pad[hidden] { display: none; }
 #topbar { display: flex; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 700; flex-wrap: wrap; }
 #phaseLbl { text-align: center; color: #ffd97a; font-size: 17px; min-height: 24px; }
+#slotBadge { text-align: center; font-size: 22px; font-weight: 800; color: #fff; padding: 12px; border-radius: 999px; border: 3px solid #e52521; background: #e52521; box-shadow: 0 4px 0 rgba(0,0,0,.4); }
+#slotBadge[hidden] { display: none; }
+#standings { background: #2b303d; border: 2px solid #4a5265; border-radius: 14px; padding: 12px 16px; }
+#standings[hidden] { display: none; }
+#standings .stTitle { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 6px; color: #ffd97a; }
+#standings .stRow { display: flex; gap: 10px; align-items: center; font-size: 17px; padding: 5px 0; }
+#standings .chipDot { width: 16px; height: 16px; border-radius: 50%; flex: 0 0 auto; }
+#standings .stRank { font-weight: 800; width: 20px; text-align: center; }
 #controls { flex: 1; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 5vh; }
 .dpad { display: flex; gap: 14px; }
 .actions { display: flex; flex-direction: column; gap: 14px; align-items: center; }
