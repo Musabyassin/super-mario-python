@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سوبر ماريو | شاشة التلفاز</title>
+<link rel="stylesheet" href="../shared/mario.css">
+<link rel="stylesheet" href="tv.css">
+</head>
+<body>
+<div id="lobby">
+  <div class="hero">
+    <h1>🍄 سوبر ماريو</h1>
+    <p>العب من هاتفك — التلفاز يعرض اللعبة والهاتف هو يد التحكم.<br>
+    افتح صفحة الهاتف وأدخل الكود، أو امسح رمز QR.</p>
+    <div class="codeRow" id="codeRow"><b>•</b><b>•</b><b>•</b><b>•</b></div>
+    <div class="status" id="lobbyStatus">⏳ بانتظار الاتصال بالخادم…</div>
+    <div class="levels">
+      <span>المستوى:</span>
+      <button id="lvl11" class="lvlBtn on">1-1</button>
+      <button id="lvl12" class="lvlBtn">1-2</button>
+    </div>
+    <button id="startBtn" class="bigBtn" disabled>▶ ابدأ اللعب</button>
+    <p class="hint">أو العب بلوحة المفاتيح مباشرة: الأسهم للحركة، مسافة/↑ للقفز، Shift للتسريع، P للإيقاف، R لإعادة اللعب.</p>
+  </div>
+  <div class="qrbox">
+    <img id="qr" alt="QR code">
+    <span>امسح للدخول من الهاتف</span>
+    <div id="ctrlState" class="ctrlState">📵 لا يوجد هاتف متصل بعد</div>
+  </div>
+</div>
+
+<div id="game" hidden>
+  <div id="stage">
+    <canvas id="cv" width="640" height="480"></canvas>
+    <div id="overlay" hidden>
+      <div id="ovTitle">GAME OVER</div>
+      <div id="ovSub"></div>
+      <div class="ovBtns">
+        <button id="ovRestart" class="bigBtn">↻ إعادة اللعب</button>
+        <button id="ovNext" class="bigBtn alt">المستوى التالي ⏭</button>
+        <button id="ovLobby" class="bigBtn ghost">العودة للردهة</button>
+      </div>
+    </div>
+  </div>
+  <div id="bar">
+    <span id="barCode">كود الغرفة: <b>----</b></span>
+    <span id="barCtrl">📵 هاتف غير متصل</span>
+    <span id="barPhase">الردهة</span>
+    <button id="pauseBtn">⏸ إيقاف</button>
+    <button id="restartBtn">↻ إعادة</button>
+    <button id="lobbyBtn">🏠 الردهة</button>
+  </div>
+</div>
+
+<script type="module" src="tv.js"></script>
+</body>
+</html>

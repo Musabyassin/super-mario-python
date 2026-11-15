@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>سوبر ماريو | يد التحكم</title>
+<link rel="stylesheet" href="../shared/mario.css">
+<link rel="stylesheet" href="play.css">
+</head>
+<body>
+<div id="join">
+  <h1>🍄 سوبر ماريو</h1>
+  <p>أدخل كود الغرفة الظاهر على شاشة التلفاز</p>
+  <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+  <input id="nameInput" maxlength="14" placeholder="اسمك (اختياري)" autocomplete="off">
+  <button id="joinBtn" class="bigBtn">🎮 انضم للعب</button>
+  <div id="joinErr" class="err"></div>
+  <p class="hint">أو امسح رمز QR على التلفاز — سيُملأ الكود تلقائياً.</p>
+</div>
+
+<div id="pad" hidden>
+  <div id="topbar">
+    <span id="roomLbl">غرفة ----</span>
+    <span id="connLbl">⏳ يتصل…</span>
+    <span id="hudLbl">⭐ 0 • 🪙 0 • ⏱ 0</span>
+  </div>
+  <div id="phaseLbl">الردهة — اضغط «ابدأ» من التلفاز أو من هنا</div>
+  <div id="controls">
+    <div class="dpad">
+      <button id="btnLeft" class="ctl" data-k="left">◀</button>
+      <button id="btnRight" class="ctl" data-k="right">▶</button>
+    </div>
+    <div class="actions">
+      <button id="btnJump" class="ctl jump" data-k="jump">قفز ⬆</button>
+      <button id="btnBoost" class="ctl boost" data-k="boost">تسريع ⚡</button>
+    </div>
+  </div>
+  <div id="gameBtns">
+    <button id="startBtn">▶ ابدأ</button>
+    <button id="pauseBtn">⏸ إيقاف</button>
+    <button id="restartBtn">↻ إعادة</button>
+  </div>
+  <div id="specNote" hidden>👀 أنت تشاهد فقط — يد التحكم مع لاعب آخر.</div>
+</div>
+
+<script src="play.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"dependencies":{"qrcode":"1.5.4","ws":"8.18.0"},"description":"Super Mario (mx0c/super-mario-python) as a web game: TV display + phone controller, room-code play, same model as Sayyed Alaqar","engines":{"node":">=18"},"main":"server.js","name":"super-mario-web","scripts":{"start":"node server.js","test":"node test/relay.test.js"},"version":"1.0.0"}

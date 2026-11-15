@@ -1,0 +1,11 @@
+/* shared look for the Mario web game */
+:root {
+  --sky: #5c94fc; --ink: #1c2430; --surface: #ffffff; --surface2: #f2f4f8;
+  --line: #d9dee7; --accent: #e52521; --accent2: #fbd000; --good: #1f9d55;
+  --muted: #667085;
+  --f: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--f); background: var(--sky); color: var(--ink); }
+button { font-family: inherit; cursor: pointer; }

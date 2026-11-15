@@ -1,0 +1,30 @@
+html, body { height: 100%; }
+body { background: #20242e; color: #fff; touch-action: none; overscroll-behavior: none; }
+#join { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+#join[hidden] { display: none; }
+#join h1 { font-size: 42px; margin: 0; }
+#join p { color: #c6cede; margin: 0; font-size: 18px; }
+#join input { width: min(320px, 86vw); font-size: 28px; text-align: center; padding: 12px; border-radius: 12px; border: 2px solid #3a4152; background: #2b303d; color: #fff; font-family: inherit; letter-spacing: .35em; direction: ltr; }
+#nameInput { font-size: 20px !important; letter-spacing: normal !important; }
+.bigBtn { font-size: 22px; font-weight: 700; padding: 14px 42px; border: none; border-radius: 14px; background: var(--accent); color: #fff; }
+.err { color: #ff8a80; min-height: 22px; font-weight: 700; }
+.hint { font-size: 15px !important; }
+
+#pad { min-height: 100%; display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+#pad[hidden] { display: none; }
+#topbar { display: flex; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 700; flex-wrap: wrap; }
+#phaseLbl { text-align: center; color: #ffd97a; font-size: 17px; min-height: 24px; }
+#controls { flex: 1; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 5vh; }
+.dpad { display: flex; gap: 14px; }
+.actions { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.ctl { width: 96px; height: 96px; border-radius: 50%; border: none; font-size: 34px; font-weight: 800; color: #fff; background: #3a4152; box-shadow: 0 5px 0 rgba(0,0,0,.4); touch-action: none; user-select: none; -webkit-user-select: none; }
+.ctl:active, .ctl.held { background: var(--accent); transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.ctl.jump { width: 128px; height: 128px; font-size: 26px; background: var(--accent); }
+.ctl.boost { width: 96px; height: 96px; font-size: 18px; background: #b8860b; }
+#gameBtns { display: flex; gap: 10px; justify-content: center; }
+#gameBtns button { font-size: 18px; font-weight: 700; padding: 12px 22px; border-radius: 12px; border: 2px solid #4a5265; background: #2b303d; color: #fff; }
+#specNote { text-align: center; color: #ffd97a; font-size: 17px; }
+@media (max-width: 420px) {
+  .ctl { width: 84px; height: 84px; }
+  .ctl.jump { width: 112px; height: 112px; }
+}
