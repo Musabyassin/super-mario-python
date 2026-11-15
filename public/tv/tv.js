@@ -215,4 +215,8 @@ game.init().then(() => {
   new ResizeObserver(() => fitCanvas()).observe($('stage'));
   window.addEventListener('resize', fitCanvas);
   (function loop() { game.frame(); requestAnimationFrame(loop); })();
+  /* Fallback: headed browsers throttle requestAnimationFrame in a
+     background tab, which would freeze the game while someone holds
+     phone buttons in another tab. When hidden, tick at ~20/s instead. */
+  setInterval(() => { if (document.hidden) game.frame(); }, 50);
 });

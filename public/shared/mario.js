@@ -360,7 +360,7 @@ export class MarioGame {
   }
   /* إعادة ظهور لاعب عند الكاميرا (بعد موت أو تأخر) مع حصانة ثانيتين. */
   _respawnPlayer(p) {
-    p.rect.x = Math.max(0, -this.camX + 2 * TILE);
+    p.rect.x = Math.max(0, -this.camX + (2 + (p.slot - 1)) * TILE);
     p.rect.y = 0;
     p.vel.x = 0; p.vel.y = 0;
     p.invincibility = 120;
@@ -429,7 +429,7 @@ export class MarioGame {
     return {
       slot, name: name || PLAYER_COLORS[slot - 1].name,
       color: PLAYER_COLORS[slot - 1].css,
-      rect: { x: 0, y: 0, w: TILE, h: TILE }, vel: { x: 0, y: 0 }, gravity: 0.8,
+      rect: { x: (slot - 1) * TILE, y: 0, w: TILE, h: TILE }, vel: { x: 0, y: 0 }, gravity: 0.8,
       onGround: false, obeyGravity: true, inAir: false, inJump: false,
       power: 0, invincibility: 0, restart: false, pause: false,
       go: { direction: 0, heading: 1, accelVel: 0.4, decelVel: 0.25, maxVel: 3.0, boost: false, anim: small },
