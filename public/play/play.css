@@ -10,11 +10,20 @@ body { background: #20242e; color: #fff; touch-action: none; overscroll-behavior
 .err { color: #ff8a80; min-height: 22px; font-weight: 700; }
 .hint { font-size: 15px !important; }
 
-#pad { min-height: 100%; display: flex; flex-direction: column; padding: 12px; gap: 10px; }
+/* ---- gamepad: whole screen, no scroll, controls pinned to the bottom ---- */
+#pad { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap: 8px; overflow: hidden; }
 #pad[hidden] { display: none; }
-#topbar { display: flex; justify-content: space-between; gap: 8px; font-size: 17px; font-weight: 700; flex-wrap: wrap; }
-#phaseLbl { text-align: center; color: #ffd97a; font-size: 17px; min-height: 24px; }
-#slotBadge { text-align: center; font-size: 22px; font-weight: 800; color: #fff; padding: 12px; border-radius: 999px; border: 3px solid #e52521; background: #e52521; box-shadow: 0 4px 0 rgba(0,0,0,.4); }
+
+/* compact header: two tidy rows of pills */
+#topbar { display: flex; flex-direction: column; gap: 6px; }
+.tbRow { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.pill { background: #2b303d; border: 1px solid #454e61; border-radius: 999px; padding: 5px 12px; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill.scores { color: #ffd97a; }
+.pill.phase { color: #ffd97a; max-width: 55%; }
+#phaseLbl { text-align: center; }
+
+/* slim player badge (was a giant full-width pill) */
+#slotBadge { text-align: center; font-size: 17px; font-weight: 800; color: #fff; padding: 7px 14px; border-radius: 999px; border: 2px solid #e52521; background: #e52521; box-shadow: 0 3px 0 rgba(0,0,0,.4); }
 #slotBadge[hidden] { display: none; }
 #standings { background: #2b303d; border: 2px solid #4a5265; border-radius: 14px; padding: 12px 16px; }
 #standings[hidden] { display: none; }
@@ -22,17 +31,40 @@ body { background: #20242e; color: #fff; touch-action: none; overscroll-behavior
 #standings .stRow { display: flex; gap: 10px; align-items: center; font-size: 17px; padding: 5px 0; }
 #standings .chipDot { width: 16px; height: 16px; border-radius: 50%; flex: 0 0 auto; }
 #standings .stRank { font-weight: 800; width: 20px; text-align: center; }
-#controls { flex: 1; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 5vh; }
-.dpad { display: flex; gap: 14px; }
-.actions { display: flex; flex-direction: column; gap: 14px; align-items: center; }
-.ctl { width: 96px; height: 96px; border-radius: 50%; border: none; font-size: 34px; font-weight: 800; color: #fff; background: #3a4152; box-shadow: 0 5px 0 rgba(0,0,0,.4); touch-action: none; user-select: none; -webkit-user-select: none; }
-.ctl:active, .ctl.held { background: var(--accent); transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.4); }
-.ctl.jump { width: 128px; height: 128px; font-size: 26px; background: var(--accent); }
-.ctl.boost { width: 96px; height: 96px; font-size: 18px; background: #b8860b; }
-#gameBtns { display: flex; gap: 10px; justify-content: center; }
-#gameBtns button { font-size: 18px; font-weight: 700; padding: 12px 22px; border-radius: 12px; border: 2px solid #4a5265; background: #2b303d; color: #fff; }
-#specNote { text-align: center; color: #ffd97a; font-size: 17px; }
-@media (max-width: 420px) {
-  .ctl { width: 84px; height: 84px; }
-  .ctl.jump { width: 112px; height: 112px; }
+.spacer { flex: 1; min-height: 4px; }
+#specNote { text-align: center; color: #ffd97a; font-size: 16px; }
+
+/* ---- bottom deck: one gamepad base, all buttons on one baseline ---- */
+#deck { background: #262b38; border: 1px solid #3a4152; border-radius: 20px 20px 16px 16px; padding: 10px 12px 12px; }
+#gameBtns { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+#gameBtns button { font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: 1px solid #4a5265; background: #2b303d; color: #fff; }
+
+#controls { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+.ctl { --btn: clamp(72px, 21vw, 100px); width: var(--btn); height: var(--btn); border-radius: 50%; border: none; font-size: 30px; font-weight: 800; color: #fff; background: #3a4152; box-shadow: 0 5px 0 rgba(0,0,0,.45); touch-action: none; user-select: none; -webkit-user-select: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.ctl small { font-size: 13px; font-weight: 700; }
+.ctl:active, .ctl.held { background: var(--accent); transform: translateY(3px) scale(.96); box-shadow: 0 2px 0 rgba(0,0,0,.45); }
+
+/* D-pad: force LTR so ◀ is physically on the left and ▶ on the right
+   (RTL page had mirrored them — the left button pointed right). */
+.dpad { display: flex; gap: 12px; direction: ltr; align-items: flex-end; }
+
+/* actions: jump is the big outer button, boost is smaller and tucked
+   slightly up toward the middle so the thumb rolls onto it */
+.actions { display: flex; gap: 12px; align-items: flex-end; }
+.ctl.jump { --btn: clamp(96px, 28vw, 132px); font-size: 34px; background: var(--accent); }
+.ctl.jump small { font-size: 16px; }
+.ctl.boost { --btn: clamp(64px, 18vw, 84px); font-size: 24px; background: #b8860b; align-self: flex-start; }
+.ctl.boost small { font-size: 12px; }
+.ctl.boost:active, .ctl.boost.held { background: #d9a521; }
+
+/* short screens (landscape phones): shrink the pad so everything still fits */
+@media (max-height: 500px) {
+  #pad { gap: 5px; padding-top: 6px; }
+  .pill { font-size: 13px; padding: 3px 10px; }
+  #slotBadge { font-size: 14px; padding: 4px 12px; }
+  .ctl { --btn: clamp(54px, 15vh, 72px); font-size: 22px; }
+  .ctl.jump { --btn: clamp(68px, 19vh, 92px); font-size: 26px; }
+  .ctl.boost { --btn: clamp(48px, 13vh, 62px); font-size: 18px; }
+  #gameBtns { margin-bottom: 6px; }
+  #gameBtns button { font-size: 13px; padding: 6px 12px; }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="data:,">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>سوبر ماريو | يد التحكم</title>
 <link rel="stylesheet" href="../shared/mario.css">
 <link rel="stylesheet" href="play.css">
@@ -20,30 +20,37 @@
 </div>
 
 <div id="pad" hidden>
-  <div id="topbar">
-    <span id="roomLbl">غرفة ----</span>
-    <span id="connLbl">⏳ يتصل…</span>
-    <span id="hudLbl">⭐ 0 • 🪙 0 • ⏱ 0</span>
-  </div>
-  <div id="phaseLbl">الردهة — اضغط «ابدأ» من التلفاز أو من هنا</div>
+  <header id="topbar">
+    <div class="tbRow">
+      <span id="roomLbl" class="pill">غرفة ----</span>
+      <span id="connLbl" class="pill">⏳ يتصل…</span>
+    </div>
+    <div class="tbRow">
+      <span id="hudLbl" class="pill scores">⭐ 0 • 🪙 0 • 💀 0</span>
+      <span id="phaseLbl" class="pill phase">الردهة</span>
+    </div>
+  </header>
   <div id="slotBadge" hidden></div>
   <div id="standings" hidden></div>
-  <div id="controls">
-    <div class="dpad">
-      <button id="btnLeft" class="ctl" data-k="left">◀</button>
-      <button id="btnRight" class="ctl" data-k="right">▶</button>
-    </div>
-    <div class="actions">
-      <button id="btnJump" class="ctl jump" data-k="jump">قفز ⬆</button>
-      <button id="btnBoost" class="ctl boost" data-k="boost">تسريع ⚡</button>
-    </div>
-  </div>
-  <div id="gameBtns">
-    <button id="startBtn">▶ ابدأ</button>
-    <button id="pauseBtn">⏸ إيقاف</button>
-    <button id="restartBtn">↻ إعادة</button>
-  </div>
   <div id="specNote" hidden>👀 أنت تشاهد فقط — المقاعد الأربعة ممتلئة.</div>
+  <div class="spacer"></div>
+  <div id="deck">
+    <div id="gameBtns">
+      <button id="startBtn">▶ ابدأ</button>
+      <button id="pauseBtn">⏸ إيقاف</button>
+      <button id="restartBtn">↻ إعادة</button>
+    </div>
+    <div id="controls">
+      <div class="dpad">
+        <button id="btnLeft" class="ctl" data-k="left" aria-label="يسار">◀</button>
+        <button id="btnRight" class="ctl" data-k="right" aria-label="يمين">▶</button>
+      </div>
+      <div class="actions">
+        <button id="btnBoost" class="ctl boost" data-k="boost" aria-label="تسريع">⚡<small>تسريع</small></button>
+        <button id="btnJump" class="ctl jump" data-k="jump" aria-label="قفز">⬆<small>قفز</small></button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="play.js"></script>
