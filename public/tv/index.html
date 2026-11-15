@@ -18,8 +18,7 @@
     <div class="status" id="lobbyStatus">⏳ بانتظار الاتصال بالخادم…</div>
     <div class="levels">
       <span>المستوى:</span>
-      <button id="lvl11" class="lvlBtn on">1-1</button>
-      <button id="lvl12" class="lvlBtn">1-2</button>
+      <div id="lvlBtns"></div>
     </div>
     <div class="slots" id="slots"></div>
     <button id="startBtn" class="bigBtn" disabled>▶ ابدأ اللعب</button>
@@ -42,10 +41,11 @@
     <div id="overlay" hidden>
       <div id="ovTitle">GAME OVER</div>
       <div id="ovSub"></div>
+      <div id="ovCount" hidden></div>
       <div id="ovStandings"></div>
       <div class="ovBtns">
         <button id="ovRestart" class="bigBtn">↻ إعادة اللعب</button>
-        <button id="ovNext" class="bigBtn alt">المستوى التالي ⏭</button>
+        <button id="ovNext" class="bigBtn alt">⏭ تخطي الانتظار</button>
         <button id="ovLobby" class="bigBtn ghost">العودة للردهة</button>
       </div>
     </div>

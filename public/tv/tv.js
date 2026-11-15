@@ -4,9 +4,12 @@
    merges it with the local keyboard (P1). Renders the party HUD bar,
    the lobby slots and the winner screen. Canvas backing store scales
    to the display (up to 3840×2160) with crisp pixel-art upscaling. */
-import { MarioGame, PLAYER_COLORS } from '../shared/mario.js';
+import { MarioGame, PLAYER_COLORS, LEVEL_ORDER } from '../shared/mario.js';
 
 const $ = (id) => document.getElementById(id);
+/* أسماء المراحل مثل "1-10" تنقلب إلى "10-1" داخل النص العربي (bidi) —
+   عزلها بمؤشري LRI/PDI يحافظ على ترتيبها. */
+const L = (s) => String.fromCharCode(0x2066) + s + String.fromCharCode(0x2069);
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 
 const canvas = $('cv');
@@ -65,25 +68,45 @@ function renderHud(hud) {
     return '<div class="chip' + (isLead ? ' leader' : '') + '" style="--pc:' + p.color + '">'
       + '<span class="chipDot"></span><b>' + escapeHtml(p.name) + '</b>'
       + '<span>⭐ ' + p.score + '</span><span>🪙 ' + p.coins + '</span><span>💀 ' + p.deaths + '</span>'
+      + (p.total ? '<span>🏆 ' + p.total + '</span>' : '')
       + (isLead ? '<span>👑</span>' : '') + '</div>';
   }).join('');
-  $('barMid').textContent = 'العالم ' + hud.level + '  •  ⏱ ' + String(hud.time).padStart(3, '0');
+  $('barMid').textContent = 'العالم ' + L(hud.level) + '  •  ⏱ ' + String(hud.time).padStart(3, '0');
+  /* أزرار اختيار المرحلة في الردهة تتبع المرحلة الحالية دائماً. */
+  document.querySelectorAll('.lvlBtn').forEach((b) => b.classList.toggle('on', 'Level' + hud.level.replace('-', '') === b.dataset.level));
   if (hud.phase === 'win' && hud.winner) showWin(hud);
 }
 
 function showWin(hud) {
   const ov = $('overlay');
   ov.hidden = false;
-  $('ovTitle').textContent = '🏆 الفائز: ' + hud.winner.name;
-  $('ovSub').textContent = 'أنهى المستوى ' + hud.level + ' أولاً!';
   const st = hud.standings || hud.players || [];
-  $('ovStandings').innerHTML = '<div class="stTitle">الترتيب النهائي</div>' + st.map((p, i) =>
+  const rowHtml = (p, i) =>
     '<div class="stRow"><span class="stRank">' + (i + 1) + '</span>'
     + '<span class="chipDot" style="background:' + p.color + '"></span>'
     + '<b>' + escapeHtml(p.name) + '</b>'
-    + '<span>⭐ ' + p.score + '</span><span>🪙 ' + p.coins + '</span><span>💀 ' + p.deaths + '</span></div>').join('');
-  $('ovNext').hidden = (hud.level === '1-2');
-  $('barPhase').textContent = '🏆 فاز ' + hud.winner.name + '!';
+    + '<span>⭐ ' + p.score + '</span><span>🏆 ' + (p.total || 0) + '</span><span>🪙 ' + p.coins + '</span><span>💀 ' + p.deaths + '</span></div>';
+  if (hud.isFinal && hud.champion) {
+    /* شاشة البطل: لا انتقال تلقائي، والبطل أول الترتيب بالمجموع. */
+    $('ovTitle').textContent = '🏆 البطل: ' + hud.champion.name;
+    $('ovSub').textContent = 'بطل البطولة — مجموع ' + hud.champion.total + ' نقطة!';
+    $('ovStandings').innerHTML = '<div class="stTitle">الترتيب النهائي للبطولة</div>' + st.map(rowHtml).join('');
+    $('ovCount').hidden = true;
+    $('ovNext').hidden = true;
+    $('ovRestart').textContent = '↻ إعادة البطولة من 1-1';
+    $('barPhase').textContent = '🏆 البطل ' + hud.champion.name + '!';
+  } else {
+    $('ovTitle').textContent = '🏆 الفائز: ' + hud.winner.name;
+    $('ovSub').textContent = 'أنهى المستوى ' + L(hud.level) + ' أولاً!';
+    $('ovStandings').innerHTML = '<div class="stTitle">ترتيب البطولة</div>' + st.map(rowHtml).join('');
+    if (hud.nextLevel) {
+      $('ovCount').hidden = false;
+      $('ovCount').textContent = 'المستوى التالي (' + L(hud.nextLevel) + ') يبدأ خلال ' + hud.nextIn + '…';
+    } else $('ovCount').hidden = true;
+    $('ovNext').hidden = false;
+    $('ovRestart').textContent = '↻ إعادة اللعب';
+    $('barPhase').textContent = '🏆 فاز ' + hud.winner.name + '!';
+  }
 }
 
 function showLobby() {
@@ -108,20 +131,19 @@ function onPhase(phase) {
     $('barPhase').textContent = 'متوقفة مؤقتاً';
   } else if (phase === 'playing') {
     ov.hidden = true;
-    $('barPhase').textContent = 'تلعب الآن — المستوى ' + game.levelName;
+    $('barPhase').textContent = 'تلعب الآن — المستوى ' + L(game.levelName);
   }
 }
 
 function doControl(action, lvl) {
   if (action === 'start') {
-    if (!started) { started = true; showGame(); game.start(); }
+    if (!started) { started = true; showGame(); game.startFresh(); }
     else if (game.phase === 'win') game.restart();
     else if (game.phase === 'paused') game.pauseToggle();
   } else if (action === 'pause') game.pauseToggle();
   else if (action === 'restart') { showGame(); game.restart(); }
   else if (action === 'level' && lvl) {
     level = lvl;
-    document.querySelectorAll('.lvlBtn').forEach((b) => b.classList.toggle('on', b.id === (lvl === 'Level1-2' ? 'lvl12' : 'lvl11')));
     game.setLevel(lvl);
   } else if (action === 'lobby') { showLobby(); game.setPhase('lobby'); }
 }
@@ -204,11 +226,26 @@ $('restartBtn').addEventListener('click', () => doControl('restart'));
 $('lobbyBtn').addEventListener('click', () => doControl('lobby'));
 $('ovRestart').addEventListener('click', () => doControl('restart'));
 $('ovLobby').addEventListener('click', () => doControl('lobby'));
-$('ovNext').addEventListener('click', () => { doControl('level', 'Level1-2'); doControl('restart'); });
-$('lvl11').addEventListener('click', () => doControl('level', 'Level1-1'));
-$('lvl12').addEventListener('click', () => doControl('level', 'Level1-2'));
+$('ovNext').addEventListener('click', () => game.advanceLevel());
+
+/* أزرار اختيار المرحلة في الردهة: 1-1 … 1-10، والمختارة مضيئة.
+   اختيار واحدة يبدأ جولة جديدة منها (نقاط البطولة تُصفَّر). */
+function buildLevelButtons() {
+  const box = $('lvlBtns');
+  box.innerHTML = '';
+  LEVEL_ORDER.forEach((file, i) => {
+    const b = document.createElement('button');
+    b.id = 'lvl' + (i + 1);
+    b.className = 'lvlBtn' + (file === level ? ' on' : '');
+    b.dataset.level = file;
+    b.textContent = '1-' + (i + 1);
+    b.addEventListener('click', () => doControl('level', file));
+    box.appendChild(b);
+  });
+}
 
 game.init().then(() => {
+  buildLevelButtons();
   renderLobbySlots([]);
   connect();
   fitCanvas();

@@ -10,6 +10,15 @@
    tagged with its player slot (1–4). One Mario per player,
    sharing one world and one camera (leader). */
 const TILE = 32, VIEW_W = 640, VIEW_H = 480;
+/* ترتيب المراحل: 1-1 → … → 1-10. الفوز بمرحلة ينتقل تلقائياً للتالية
+   بعد عدّ تنازلي 5 ثوانٍ؛ الفوز بـ 1-10 ينهي البطولة. */
+export const LEVEL_ORDER = ['Level1-1', 'Level1-2', 'Level1-3', 'Level1-4', 'Level1-5',
+  'Level1-6', 'Level1-7', 'Level1-8', 'Level1-9', 'Level1-10'];
+export const COUNTDOWN_MS = 5000;
+function displayName(file) {
+  const m = /^Level1-(\d+)$/.exec(file);
+  return m ? '1-' + m[1] : file;
+}
 /* ألوان اللاعبين الأربعة — نفسها في الخادم (server/server.js).
    اللاعب 1 أحمر كلاسيكي (بدون تلوين)، والباقون يُلوَّنون باستبدال
    أحمر ماريو (255,49,24) بلون اللاعب. */
@@ -237,11 +246,23 @@ export class MarioGame {
     this.ready = false;
     this.phase = 'lobby'; /* lobby | playing | paused | win */
     this.levelName = '1-1';
+    this.levelFile = 'Level1-1';
     this.players = []; /* one Mario object per joined player (slot 1..4) */
     this.mario = null; /* alias: players[0] (keyboard / P1) */
     this.winner = null;
     this.standings = null;
     this.confetti = [];
+    /* البطولة التراكمية: totals[slot][levelName] = نقاط تلك المرحلة
+       عند الفوز بها (تُستبدل عند إعادة الفوز بنفس المرحلة فلا ازدواج).
+       تُصفَّر فقط عند بدء جولة جديدة من الردهة؛ تحميل مرحلة يصفّر
+       نقاط المرحلة الحالية فقط ولا يمسّ totals أبداً. */
+    this.totals = {};
+    /* الانتقال التلقائي: المرحلة التالية + موعدها بساعة الحائط
+       (Date.now) فيتحرك العدّ حتى لو كان تبويب التلفاز في الخلفية. */
+    this.nextLevel = null; this.nextLevelName = null; this.nextAt = 0;
+    this.isFinal = false; /* true عندما يكون الفوز الحالي بآخر مرحلة */
+    this.champion = null;
+    this._lastHudPush = 0;
     /* 4K: backing-store scale + logical view width (view height stays 480).
        resize() sets them from the real canvas size; defaults = 640×480. */
     this.scale = 1;
@@ -271,7 +292,8 @@ export class MarioGame {
   /* ---------- level loading (mirrors classes/Level.py) ---------- */
   loadLevel(name) {
     return fetch('/assets/levels/' + name + '.json').then((r) => r.json()).then((data) => {
-      this.levelName = name === 'Level1-2' ? '1-2' : '1-1';
+      this.levelFile = name;
+      this.levelName = displayName(name);
       this.levelLength = data.length;
       const S = this.sprites;
       /* grid[y][x]: {spr, rect|null, redraw} — 15 rows x levelLength cols */
@@ -329,6 +351,8 @@ export class MarioGame {
       this.players = roster.map((r) => this._spawnMario(r.slot, r.name));
       this.mario = this.players[0];
       this.winner = null; this.standings = null; this.confetti = [];
+      this.champion = null; this.isFinal = false;
+      this.nextLevel = null; this.nextLevelName = null; this.nextAt = 0;
       this.time = 0; this.ticks = 0;
       this.camX = 0; this.camPosX = 0;
     });
@@ -452,18 +476,45 @@ export class MarioGame {
     this.sound.startMusic();
     this.setPhase('playing');
   }
+  /* بدء جولة جديدة من الردهة: تُصفَّر نقاط البطولة. */
+  startFresh() { this.resetTotals(); this.start(); }
+  resetTotals() { this.totals = {}; this.pushHud(); }
+  totalFor(slot) {
+    const t = this.totals[slot];
+    return t ? Object.values(t).reduce((a, b) => a + b, 0) : 0;
+  }
   pauseToggle() {
     if (this.phase === 'playing') { this.setPhase('paused'); this.sound.stopMusic(); }
     else if (this.phase === 'paused') { this.setPhase('playing'); this.sound.startMusic(); }
   }
-  restart() { this.loadLevel(this.levelName === '1-2' ? 'Level1-2' : 'Level1-1').then(() => { this.sound.startMusic(); this.setPhase('playing'); }); }
-  setLevel(name) { this.loadLevel(name).then(() => { this.draw(); }); }
+  /* إعادة المرحلة الحالية بنقاط مرحلة صفر؛ نقاط البطولة للمراحل
+     المكتملة تبقى. على شاشة البطل (الفوز بـ 1-10) يعيد الجولة
+     كلها من 1-1 بنقاط بطولة صفر. */
+  restart() {
+    if (this.phase === 'win' && this.isFinal) return this.restartRun();
+    this.loadLevel(this.levelFile).then(() => { this.sound.startMusic(); this.setPhase('playing'); });
+  }
+  restartRun() {
+    this.resetTotals();
+    this.loadLevel('Level1-1').then(() => { this.sound.startMusic(); this.setPhase('playing'); });
+  }
+  /* الانتقال للمرحلة التالية (تلقائياً بعد العدّ أو بتخطي زر «التالي»).
+     لا يفعل شيئاً إن لم تكن هناك مرحلة تالية. */
+  advanceLevel() {
+    if (!this.nextLevel) return false;
+    const next = this.nextLevel;
+    this.nextLevel = null; this.nextLevelName = null; this.nextAt = 0;
+    this.loadLevel(next).then(() => { this.sound.startMusic(); this.setPhase('playing'); });
+    return true;
+  }
+  setLevel(name) { this.resetTotals(); this.loadLevel(name).then(() => { this.draw(); }); }
   setInput(inp) { this.setPlayerInput(1, inp); } /* توافقية: لوحة المفاتيح = اللاعب 1 */
 
   pushHud() {
     const players = this.players.map((p) => ({
       slot: p.slot, name: p.name, color: p.color,
       score: p.score, coins: p.coins, deaths: p.deaths,
+      total: this.totalFor(p.slot),
       progress: Math.max(0, Math.min(1, p.rect.x / (57 * TILE))),
     }));
     this.onHud({
@@ -471,6 +522,11 @@ export class MarioGame {
       players,
       winner: this.winner ? { slot: this.winner.slot, name: this.winner.name, color: this.winner.color } : null,
       standings: this.standings,
+      /* الانتقال التلقائي: ثوانٍ متبقية واسم المرحلة التالية (null في النهاية) */
+      nextIn: this.nextLevel ? Math.max(0, Math.ceil((this.nextAt - Date.now()) / 1000)) : 0,
+      nextLevel: this.nextLevelName,
+      isFinal: this.isFinal,
+      champion: this.champion,
       /* حقول قديمة للتوافقية (اللاعب 1) */
       score: this.mario ? this.mario.score : 0,
       coins: this.mario ? this.mario.coins : 0,
@@ -571,6 +627,11 @@ export class MarioGame {
       if (this.hudTimer >= 30) { this.hudTimer = 0; this.pushHud(); }
     } else if (this.phase === 'win') {
       this._updateConfetti();
+      /* العدّ التنازلي بساعة الحائط فيتقدّم حتى في تبويب مخفيّ
+         (فاصل الـ 50ms يستدعي frame() هناك)، والـ HUD يُدفع كل
+         ~نصف ثانية فيرى التلفاز والهواتف العدّ يتكتك 5←1. */
+      if (this.nextLevel && Date.now() >= this.nextAt) this.advanceLevel();
+      if (Date.now() - this._lastHudPush >= 500) { this._lastHudPush = Date.now(); this.pushHud(); }
     }
     this.draw();
   }
@@ -623,10 +684,35 @@ export class MarioGame {
 
   _win(winner) {
     winner.score += Math.max(0, 100 - this.time) * 10;
+    /* سجّل نقاط هذه المرحلة في البطولة (استبدال لا إضافة، فإعادة
+       الفوز بنفس المرحلة لا تضاعف النقاط). */
+    for (const p of this.players) {
+      if (!this.totals[p.slot]) this.totals[p.slot] = {};
+      this.totals[p.slot][this.levelName] = p.score;
+    }
     this.winner = winner;
-    this.standings = [...this.players]
-      .map((p) => ({ slot: p.slot, name: p.name, color: p.color, score: p.score, coins: p.coins, deaths: p.deaths, progress: Math.max(0, Math.min(1, p.rect.x / (57 * TILE))) }))
-      .sort((a, b) => (b.progress - a.progress) || (b.score - a.score));
+    const rows = this.players.map((p) => ({
+      slot: p.slot, name: p.name, color: p.color, score: p.score,
+      coins: p.coins, deaths: p.deaths, total: this.totalFor(p.slot),
+      progress: Math.max(0, Math.min(1, p.rect.x / (57 * TILE))),
+    }));
+    const idx = LEVEL_ORDER.indexOf(this.levelFile);
+    this.isFinal = idx === LEVEL_ORDER.length - 1;
+    if (this.isFinal) {
+      /* شاشة البطل: الترتيب بالمجموع التراكمي، والبطل أوله. */
+      this.standings = rows.sort((a, b) => (b.total - a.total) || (b.score - a.score));
+      const c = this.standings[0];
+      this.champion = c ? { slot: c.slot, name: c.name, color: c.color, total: c.total } : null;
+      this.nextLevel = null; this.nextLevelName = null; this.nextAt = 0;
+    } else {
+      /* فوز مرحلة عادية: الترتيب بالتقدّم (الفائز أولاً) مع عرض المجموع. */
+      this.standings = rows.sort((a, b) => (b.progress - a.progress) || (b.score - a.score));
+      this.champion = null;
+      const next = LEVEL_ORDER[idx + 1] || null;
+      this.nextLevel = next;
+      this.nextLevelName = next ? displayName(next) : null;
+      this.nextAt = next ? Date.now() + COUNTDOWN_MS : 0;
+    }
     this.sound.play('powerup');
     this.sound.stopMusic();
     this._spawnConfetti();

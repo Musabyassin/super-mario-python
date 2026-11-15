@@ -187,6 +187,8 @@ wss.on('connection', (ws) => {
           t: 'hud', phase: String(msg.phase || ''), level: String(msg.level || ''), time: Number(msg.time) || 0,
           players: Array.isArray(msg.players) ? msg.players : [],
           winner: msg.winner || null, standings: msg.standings || null,
+          nextIn: Number(msg.nextIn) || 0, nextLevel: msg.nextLevel || null,
+          isFinal: !!msg.isFinal, champion: msg.champion || null,
           score: Number(msg.score) || 0, coins: Number(msg.coins) || 0,
         };
         room.controllers.forEach((c) => send(c.ws, m));

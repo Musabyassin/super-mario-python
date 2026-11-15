@@ -2,6 +2,9 @@
 /* Phone controller: join by room code, then hold-buttons send the
    held-input state to the TV through the server (on change + heartbeat). */
 const $ = (id) => document.getElementById(id);
+/* أسماء المراحل مثل "1-10" تنقلب إلى "10-1" داخل النص العربي (bidi) —
+   عزلها بمؤشري LRI/PDI يحافظ على ترتيبها. */
+const L = (s) => String.fromCharCode(0x2066) + s + String.fromCharCode(0x2069);
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
 
 let ws = null, code = '', role = '';
@@ -98,12 +101,18 @@ function join() {
         $('hudLbl').textContent = '👀 تشاهد • ' + ps.length + (ps.length === 1 ? ' لاعب' : ' لاعبين');
         renderStandings(msg.standings || ps);
       } else if (me) {
-        $('hudLbl').textContent = '⭐ ' + me.score + ' • 🪙 ' + me.coins + ' • 💀 ' + me.deaths;
+        $('hudLbl').textContent = '⭐ ' + me.score + ' • 🪙 ' + me.coins + ' • 💀 ' + me.deaths
+          + (me.total ? ' • 🏆 ' + me.total : '');
       }
-      const phases = { lobby: 'الردهة', playing: 'تلعب الآن — المستوى ' + msg.level, paused: 'متوقفة مؤقتاً', dying: '…', gameover: 'انتهت اللعبة — اضغط إعادة', win: '🎉 أنهيت المستوى ' + msg.level + '!' };
+      const phases = { lobby: 'الردهة', playing: 'تلعب الآن — المستوى ' + L(msg.level), paused: 'متوقفة مؤقتاً', dying: '…', gameover: 'انتهت اللعبة — اضغط إعادة', win: '🎉 أنهيت المستوى ' + L(msg.level) + '!' };
       if (role !== 'spectator') $('phaseLbl').textContent = phases[msg.phase] || msg.phase;
       if (msg.phase === 'win' && msg.winner) {
-        $('phaseLbl').textContent = '🏆 الفائز: ' + msg.winner.name + '!';
+        if (msg.isFinal && msg.champion) {
+          $('phaseLbl').textContent = '🏆 البطل: ' + msg.champion.name + '!';
+        } else {
+          $('phaseLbl').textContent = '🏆 الفائز: ' + msg.winner.name + '!'
+            + (msg.nextLevel && msg.nextIn ? ' • التالي (' + L(msg.nextLevel) + ') خلال ' + msg.nextIn + '…' : '');
+        }
         renderStandings(msg.standings || ps);
       } else if (role !== 'spectator') {
         $('standings').hidden = true;
